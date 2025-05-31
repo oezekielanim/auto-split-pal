@@ -1,66 +1,113 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Camera, Upload, ArrowLeft, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useReceipts } from '@/hooks/useReceipts';
+import { useToast } from '@/hooks/use-toast';
 
 const ScanReceipt = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { sessionId } = location.state || {};
   const [isScanning, setIsScanning] = useState(false);
   const [scannedImage, setScannedImage] = useState<string | null>(null);
+  const { createReceipt, addReceiptItems } = useReceipts();
+  const { toast } = useToast();
+
+  const mockOCRResult = [
+    { name: "Jollof Rice", price: 25.00 },
+    { name: "Coke", price: 8.00 },
+    { name: "Chicken", price: 15.00 },
+    { name: "Plantain", price: 12.00 },
+    { name: "Beef Stew", price: 18.00 }
+  ];
 
   const handleScan = async () => {
+    if (!sessionId) {
+      toast({
+        title: "Error",
+        description: "No session selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsScanning(true);
     
     // Simulate camera capture and OCR processing
-    setTimeout(() => {
+    setTimeout(async () => {
       // Mock scanned receipt image
       setScannedImage('/placeholder.svg');
-      setIsScanning(false);
       
-      // Navigate to items selection with mock data
-      setTimeout(() => {
-        navigate('/items', { 
-          state: { 
-            receiptItems: [
-              { id: 1, item: "Jollof Rice", price: 25.00 },
-              { id: 2, item: "Coke", price: 8.00 },
-              { id: 3, item: "Chicken", price: 15.00 },
-              { id: 4, item: "Plantain", price: 12.00 },
-              { id: 5, item: "Beef Stew", price: 18.00 }
-            ]
-          }
-        });
-      }, 1500);
+      // Create receipt in Supabase
+      const receipt = await createReceipt(sessionId, '/placeholder.svg');
+      
+      if (receipt) {
+        // Add items to the receipt
+        await addReceiptItems(receipt.id, mockOCRResult);
+        
+        setIsScanning(false);
+        
+        // Navigate to items selection with real receipt data
+        setTimeout(() => {
+          navigate('/items', { 
+            state: { 
+              receiptId: receipt.id,
+              sessionId: sessionId,
+              receiptItems: mockOCRResult
+            }
+          });
+        }, 1500);
+      } else {
+        setIsScanning(false);
+      }
     }, 2000);
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
+    if (!sessionId) {
+      toast({
+        title: "Error",
+        description: "No session selected",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Simulate file upload
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         setIsScanning(true);
-        setTimeout(() => {
+        
+        setTimeout(async () => {
           setScannedImage(URL.createObjectURL(file));
-          setIsScanning(false);
-          setTimeout(() => {
-            navigate('/items', { 
-              state: { 
-                receiptItems: [
-                  { id: 1, item: "Jollof Rice", price: 25.00 },
-                  { id: 2, item: "Coke", price: 8.00 },
-                  { id: 3, item: "Chicken", price: 15.00 },
-                  { id: 4, item: "Plantain", price: 12.00 },
-                  { id: 5, item: "Beef Stew", price: 18.00 }
-                ]
-              }
-            });
-          }, 1500);
+          
+          // Create receipt in Supabase
+          const receipt = await createReceipt(sessionId, URL.createObjectURL(file));
+          
+          if (receipt) {
+            // Add items to the receipt
+            await addReceiptItems(receipt.id, mockOCRResult);
+            
+            setIsScanning(false);
+            
+            setTimeout(() => {
+              navigate('/items', { 
+                state: { 
+                  receiptId: receipt.id,
+                  sessionId: sessionId,
+                  receiptItems: mockOCRResult
+                }
+              });
+            }, 1500);
+          } else {
+            setIsScanning(false);
+          }
         }, 2000);
       }
     };

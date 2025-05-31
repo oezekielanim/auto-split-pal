@@ -6,11 +6,13 @@ import { Camera, Users, Calculator, Trophy, Plus, QrCode, LogOut } from 'lucide-
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSplitSessions } from '@/hooks/useSplitSessions';
+import { useProfile } from '@/hooks/useProfile';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { createSession } = useSplitSessions();
+  const { createSession, sessions, loading } = useSplitSessions();
+  const { profile } = useProfile();
 
   const handleStartNewSplit = async () => {
     const session = await createSession();
@@ -22,6 +24,9 @@ const Index = () => {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const totalSessions = sessions.length;
+  const finalized = sessions.filter(s => s.is_finalized).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-teal-500">
@@ -41,9 +46,11 @@ const Index = () => {
           </Button>
         </div>
         
-        {user && (
+        {profile && (
           <div className="mt-4 text-center">
-            <p className="text-blue-100">Welcome back, {user.email}!</p>
+            <p className="text-blue-100">
+              Welcome back, {profile.full_name || user?.email}!
+            </p>
           </div>
         )}
       </div>
@@ -95,24 +102,55 @@ const Index = () => {
         <div className="grid grid-cols-2 gap-4">
           <Card className="p-4 bg-white/90 backdrop-blur-sm text-center">
             <Calculator className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-800">0</p>
-            <p className="text-gray-600 text-sm">Bills Split</p>
+            <p className="text-2xl font-bold text-gray-800">{totalSessions}</p>
+            <p className="text-gray-600 text-sm">Sessions Created</p>
           </Card>
           <Card className="p-4 bg-white/90 backdrop-blur-sm text-center">
             <Trophy className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-            <p className="text-2xl font-bold text-gray-800">0</p>
-            <p className="text-gray-600 text-sm">Golden Payments</p>
+            <p className="text-2xl font-bold text-gray-800">{finalized}</p>
+            <p className="text-gray-600 text-sm">Completed Splits</p>
           </Card>
         </div>
       </div>
 
-      {/* Recent Activity Placeholder */}
+      {/* Recent Activity */}
       <div className="px-6 mt-8 pb-20">
-        <h3 className="text-xl font-semibold text-white mb-4">Recent Splits</h3>
-        <Card className="p-8 bg-white/90 backdrop-blur-sm text-center">
-          <p className="text-gray-600">No recent splits yet</p>
-          <p className="text-sm text-gray-500 mt-2">Start your first split to see activity here</p>
-        </Card>
+        <h3 className="text-xl font-semibold text-white mb-4">Recent Sessions</h3>
+        {loading ? (
+          <Card className="p-8 bg-white/90 backdrop-blur-sm text-center">
+            <p className="text-gray-600">Loading...</p>
+          </Card>
+        ) : sessions.length > 0 ? (
+          <div className="space-y-3">
+            {sessions.slice(0, 3).map((session) => (
+              <Card key={session.id} className="p-4 bg-white/90 backdrop-blur-sm">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold text-gray-800">Session {session.session_code}</p>
+                    <p className="text-sm text-gray-600">
+                      {session.members?.length || 0} members
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-medium ${
+                      session.is_finalized ? 'text-green-600' : 'text-orange-600'
+                    }`}>
+                      {session.is_finalized ? 'Completed' : 'In Progress'}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(session.created_at || '').toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="p-8 bg-white/90 backdrop-blur-sm text-center">
+            <p className="text-gray-600">No sessions yet</p>
+            <p className="text-sm text-gray-500 mt-2">Start your first split to see activity here</p>
+          </Card>
+        )}
       </div>
     </div>
   );

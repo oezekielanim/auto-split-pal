@@ -155,14 +155,6 @@ const JoinSession = () => {
             </Button>
           </div>
         </Card>
-
-        {/* Demo Note */}
-        <Card className="p-4 bg-blue-50/80 backdrop-blur-sm">
-          <h4 className="font-semibold text-blue-800 mb-2">💡 Demo Mode</h4>
-          <p className="text-blue-700 text-sm">
-            Try entering any 6-character code to join a demo session with mock data.
-          </p>
-        </Card>
       </div>
     </div>
   );
