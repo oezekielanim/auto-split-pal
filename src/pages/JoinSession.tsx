@@ -5,58 +5,60 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, QrCode, Link, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useSplitSessions } from '@/hooks/useSplitSessions';
+import { useToast } from '@/hooks/use-toast';
 
 const JoinSession = () => {
   const navigate = useNavigate();
   const [sessionCode, setSessionCode] = useState('');
   const [joinLink, setJoinLink] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+  const { joinSession } = useSplitSessions();
+  const { toast } = useToast();
 
-  const handleJoinByCode = () => {
-    if (sessionCode.trim()) {
-      // Simulate joining session
+  const handleJoinByCode = async () => {
+    if (!sessionCode.trim()) return;
+    
+    setIsJoining(true);
+    const session = await joinSession(sessionCode);
+    
+    if (session) {
+      toast({
+        title: "Success",
+        description: "Joined session successfully!",
+      });
       navigate('/items', { 
         state: { 
-          receiptItems: [
-            { id: 1, item: "Pizza Margherita", price: 45.00 },
-            { id: 2, item: "Coca Cola", price: 12.00 },
-            { id: 3, item: "Garlic Bread", price: 18.00 }
-          ],
+          sessionId: session.id,
           isJoining: true
         }
       });
     }
+    setIsJoining(false);
   };
 
   const handleJoinByLink = () => {
     if (joinLink.trim()) {
-      // Simulate joining session
-      navigate('/items', { 
-        state: { 
-          receiptItems: [
-            { id: 1, item: "Jollof Rice", price: 25.00 },
-            { id: 2, item: "Chicken", price: 20.00 },
-            { id: 3, item: "Plantain", price: 15.00 }
-          ],
-          isJoining: true
-        }
-      });
+      // Extract session code from link if it contains one
+      const codeMatch = joinLink.match(/session[=/]([A-Z0-9]{6})/i);
+      if (codeMatch) {
+        setSessionCode(codeMatch[1]);
+      } else {
+        toast({
+          title: "Error",
+          description: "Invalid session link format",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   const handleScanQR = () => {
-    // Simulate QR scan
-    setTimeout(() => {
-      navigate('/items', { 
-        state: { 
-          receiptItems: [
-            { id: 1, item: "Burger", price: 35.00 },
-            { id: 2, item: "Fries", price: 15.00 },
-            { id: 3, item: "Milkshake", price: 18.00 }
-          ],
-          isJoining: true
-        }
-      });
-    }, 1000);
+    // Simulate QR scan - in a real app, this would open the camera
+    toast({
+      title: "QR Scanner",
+      description: "QR code scanning would open the camera here",
+    });
   };
 
   return (
@@ -118,10 +120,10 @@ const JoinSession = () => {
             />
             <Button 
               onClick={handleJoinByCode}
-              disabled={sessionCode.length < 6}
+              disabled={sessionCode.length < 6 || isJoining}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white py-3 text-lg"
             >
-              Join Session
+              {isJoining ? 'Joining...' : 'Join Session'}
             </Button>
           </div>
         </Card>
@@ -154,25 +156,12 @@ const JoinSession = () => {
           </div>
         </Card>
 
-        {/* Demo Sessions */}
+        {/* Demo Note */}
         <Card className="p-4 bg-blue-50/80 backdrop-blur-sm">
-          <h4 className="font-semibold text-blue-800 mb-3">💡 Demo Sessions Available:</h4>
-          <div className="space-y-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setSessionCode('DEMO01')}
-              className="w-full text-left justify-start border-blue-200 text-blue-700 hover:bg-blue-100"
-            >
-              DEMO01 - Pizza Night (3 people)
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setSessionCode('DEMO02')}
-              className="w-full text-left justify-start border-blue-200 text-blue-700 hover:bg-blue-100"
-            >
-              DEMO02 - Restaurant Bill (5 people)
-            </Button>
-          </div>
+          <h4 className="font-semibold text-blue-800 mb-2">💡 Demo Mode</h4>
+          <p className="text-blue-700 text-sm">
+            Try entering any 6-character code to join a demo session with mock data.
+          </p>
         </Card>
       </div>
     </div>

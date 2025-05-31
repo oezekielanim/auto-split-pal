@@ -9,7 +9,177 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          from_user: string
+          id: string
+          paid_at: string | null
+          payment_method: string | null
+          session_id: string
+          status: Database["public"]["Enums"]["payment_status"] | null
+          to_user: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          from_user: string
+          id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          session_id: string
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          to_user: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          from_user?: string
+          id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          session_id?: string
+          status?: Database["public"]["Enums"]["payment_status"] | null
+          to_user?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "split_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      receipt_items: {
+        Row: {
+          assigned_to: string[] | null
+          created_at: string | null
+          id: string
+          name: string
+          price: number
+          receipt_id: string
+        }
+        Insert: {
+          assigned_to?: string[] | null
+          created_at?: string | null
+          id?: string
+          name: string
+          price: number
+          receipt_id: string
+        }
+        Update: {
+          assigned_to?: string[] | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          price?: number
+          receipt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipt_items_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receipts: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string | null
+          session_id: string
+          total_amount: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          session_id: string
+          total_amount?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          session_id?: string
+          total_amount?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "split_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      split_sessions: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          id: string
+          is_finalized: boolean | null
+          members: string[] | null
+          session_code: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_finalized?: boolean | null
+          members?: string[] | null
+          session_code?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_finalized?: boolean | null
+          members?: string[] | null
+          session_code?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +188,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      payment_status: "pending" | "paid" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +303,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      payment_status: ["pending", "paid", "failed"],
+    },
   },
 } as const
